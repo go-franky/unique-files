@@ -31,8 +31,11 @@ func (d *arrayDirectory) Set(value string) error {
 //    go run main.go --path path/to/folder/1 --path path/to/folder/2
 func main() {
 	var dirs arrayDirectory
-	flag.Var(&dirs, "path", "path to find duplicate files")
+	flag.Var(&dirs, "path", "path to find duplicate files, defaults to current directory")
 	flag.Parse()
+	if len(dirs) == 0 {
+		dirs = append(dirs, ".")
+	}
 
 	filePaths := make(chan string)
 	go getFiles(filePaths, dirs...)
