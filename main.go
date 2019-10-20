@@ -50,6 +50,7 @@ func main() {
 	}
 	flag.Var(&dirs, "path", "path to find duplicate files, defaults to current directory")
 	skipSingle := flag.Bool("skip-single", false, "omit files that are already unique in the output")
+	verbose := flag.Bool("verbose", false, "be verbose")
 	flag.Parse()
 	if len(dirs) == 0 {
 		dirs = append(dirs, ".")
@@ -61,6 +62,9 @@ func main() {
 	files := map[string][]string{}
 
 	for path := range filePaths {
+		if *verbose {
+			fmt.Printf("Analyzing file %v\n", path)
+		}
 		md5, err := hashMD5File((path))
 		if err != nil {
 			log.Printf("could not create MD5 of file %s: %v", path, err)
