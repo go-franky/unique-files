@@ -31,7 +31,25 @@ func (d *arrayDirectory) Set(value string) error {
 //    go run main.go --path path/to/folder/1 --path path/to/folder/2
 func main() {
 	var dirs arrayDirectory
+	flag.Usage = func() {
+		ex, err := os.Executable()
+		if err != nil {
+			panic(err)
+		}
+		usageText := `Usage: %s [OPTIONS]
+
+  Example:
+    * %s
+    * %s --path .
+    * %s --skip-single --path .
+    * %s --path path/to/folder1 --path path/to/folder/2
+
+`
+		fmt.Fprintf(os.Stderr, usageText, ex, ex, ex, ex, ex)
+		flag.PrintDefaults()
+	}
 	flag.Var(&dirs, "path", "path to find duplicate files, defaults to current directory")
+	skipSingle := flag.Bool("skip-single", false, "omit files that are already unique in the output")
 	flag.Parse()
 	if len(dirs) == 0 {
 		dirs = append(dirs, ".")
@@ -55,6 +73,9 @@ func main() {
 	}
 
 	for md5, files := range files {
+		if *skipSingle && (len(files) < 2) {
+			continue
+		}
 		fmt.Printf("MD5: %s\n\t%s\n", md5, strings.Join(files, "\n\t"))
 	}
 }
