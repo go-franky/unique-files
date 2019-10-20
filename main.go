@@ -14,14 +14,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+type arrayDirectory []string
+
+func (d *arrayDirectory) String() string {
+	return "An list of directories to look for files"
+}
+
+func (d *arrayDirectory) Set(value string) error {
+	*d = append(*d, value)
+	return nil
+}
+
 // main runs the program to list all file in a given directory
 // whose contents are the same.
+// Example:
+//    go run main.go --path path/to/folder/1 --path path/to/folder/2
 func main() {
-	root := flag.String("path", ".", "path to scan files")
+	var dirs arrayDirectory
+	flag.Var(&dirs, "path", "path to find duplicate files")
 	flag.Parse()
 
 	filePaths := make(chan string)
-	go getFiles(filePaths, *root)
+	go getFiles(filePaths, dirs...)
 
 	files := map[string][]string{}
 
@@ -60,16 +74,19 @@ func hashMD5File(path string) (string, error) {
 
 // getFiles thakes a root directory, and sends all files
 // that are not directories to the channel
-func getFiles(paths chan<- string, root string) {
+func getFiles(paths chan<- string, dirs ...string) {
 	defer close(paths)
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+	for _, root := range dirs {
+
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			paths <- path
 			return nil
+		})
+		if err != nil {
+			log.Printf("could not read file: %v", err)
 		}
-		paths <- path
-		return nil
-	})
-	if err != nil {
-		log.Printf("could not read file: %v", err)
 	}
 }
